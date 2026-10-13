@@ -1,9 +1,10 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
+import { displayName } from '../../src/config/site';
 
-// Datos de tests/fixtures/content (CONTENT_DIR). La plantilla no tiene datos del negocio.
+// Datos de tests/fixtures/content (CONTENT_DIR); el nombre sale de la configuración del negocio.
 const PAGES = [
-  { path: './', h1: 'Desayunos sorpresa' },
+  { path: './', h1: displayName },
   { path: 'catalogo/', h1: 'Catálogo' },
   { path: 'entregas/', h1: 'Zonas y horarios de entrega' },
   { path: 'nosotros/', h1: 'Nosotros' },
