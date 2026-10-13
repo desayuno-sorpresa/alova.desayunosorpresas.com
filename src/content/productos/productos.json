@@ -1,1 +1,15 @@
-[]
+[
+  {
+    "id": "caja-dulce",
+    "name": "Caja dulce",
+    "description": "Ideal para cumpleaños",
+    "includes": [],
+    "category": "Desayunos",
+    "featured": false,
+    "order": 2,
+    "image": "./caja-dulce/01.webp",
+    "imageAlt": "Desayno sorpresa para un cumpleaños",
+    "status": "publicado",
+    "updatedAt": "2026-10-12"
+  }
+]
