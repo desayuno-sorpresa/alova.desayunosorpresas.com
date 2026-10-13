@@ -32,7 +32,7 @@ export const siteConfig: SiteConfig = {
   businessName: 'Alova',
   tagline: null,
   description: null,
-  city: null,
+  city: 'Bogotá (Sabana norte)',
   whatsApp: '+57 312 506 5058',
   instagramUrl: null,
   lang: 'es-CO',
