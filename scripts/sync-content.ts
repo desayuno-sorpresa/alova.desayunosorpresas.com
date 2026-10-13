@@ -324,6 +324,9 @@ export async function runSync(source: ContentSource, options: SyncOptions): Prom
         'Cámbiale el nombre a la que corresponda o créala con ese nombre exacto.',
     });
   }
+  for (const sheet of [ZONES_SHEET, FAQ_SHEET, ABOUT_SHEET]) {
+    if (!sheets.has(sheet)) warnings.push(`Crea la pestaña "${sheet}" para mostrar esa sección.`);
+  }
 
   // Descarga y convierte todo antes de tocar el disco: si algo falla, no queda a medias.
   const rendered = new Map<string, Map<string, Uint8Array[]>>();
