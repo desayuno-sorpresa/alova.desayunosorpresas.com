@@ -1,0 +1,75 @@
+---
+import type { NavItem } from '@/config/site';
+import { withBase } from '@/lib/url';
+
+interface Props {
+  siteName: string;
+  nav: readonly NavItem[];
+}
+
+const { siteName, nav } = Astro.props;
+const current = Astro.url.pathname;
+---
+
+<header class="site-header">
+  <div class="container site-header__inner">
+    <a class="site-header__brand" href={withBase()}>
+      {siteName}
+    </a>
+    <nav aria-label="Principal">
+      <ul class="site-header__nav">
+        {nav.map((item) => {
+          const href = withBase(item.path);
+          return (
+            <li>
+              <a href={href} aria-current={current === href ? 'page' : undefined}>
+                {item.label}
+              </a>
+            </li>
+          );
+        })}
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<style>
+  .site-header {
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .site-header__inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-1) var(--space-2);
+    padding-block: var(--space-2);
+  }
+
+  .site-header__brand {
+    color: var(--color-text);
+    font-weight: 700;
+    text-decoration: none;
+  }
+
+  .site-header__nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .site-header__nav a {
+    display: inline-block;
+    padding-block: 0.25rem;
+  }
+
+  .site-header__nav a[aria-current='page'] {
+    font-weight: 700;
+    text-decoration-thickness: 2px;
+  }
+</style>

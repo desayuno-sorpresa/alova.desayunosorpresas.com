@@ -1,0 +1,71 @@
+[
+  {
+    "id": "caja-de-prueba-uno",
+    "name": "Caja de prueba uno",
+    "description": "Producto ficticio 1 usado solo en las pruebas automáticas.",
+    "includes": ["Elemento de prueba A", "Elemento de prueba B"],
+    "price": 85000,
+    "category": "Mujer",
+    "featured": true,
+    "order": 1,
+    "image": "./caja-de-prueba-uno/01.webp",
+    "imageAlt": "Rectángulo de color de prueba 1",
+    "status": "publicado",
+    "updatedAt": "2026-10-12"
+  },
+  {
+    "id": "caja-de-prueba-dos",
+    "name": "Caja de prueba dos",
+    "description": "Producto ficticio 2 usado solo en las pruebas automáticas.",
+    "includes": ["Elemento de prueba A", "Elemento de prueba B"],
+    "price": 95000,
+    "category": "Mujer",
+    "featured": true,
+    "order": 2,
+    "image": "./caja-de-prueba-dos/01.webp",
+    "imageAlt": "Rectángulo de color de prueba 2",
+    "status": "publicado",
+    "updatedAt": "2026-10-12"
+  },
+  {
+    "id": "caja-de-prueba-tres",
+    "name": "Caja de prueba tres",
+    "description": "Producto ficticio 3 usado solo en las pruebas automáticas.",
+    "includes": ["Elemento de prueba A", "Elemento de prueba B"],
+    "category": "Hombre",
+    "featured": true,
+    "order": 3,
+    "image": "./caja-de-prueba-tres/01.webp",
+    "imageAlt": "Rectángulo de color de prueba 3",
+    "status": "publicado",
+    "updatedAt": "2026-10-12"
+  },
+  {
+    "id": "caja-de-prueba-cuatro",
+    "name": "Caja de prueba cuatro",
+    "description": "Producto ficticio 4 usado solo en las pruebas automáticas.",
+    "includes": ["Elemento de prueba A", "Elemento de prueba B"],
+    "price": 120000,
+    "category": "Hombre",
+    "featured": true,
+    "order": 4,
+    "image": "./caja-de-prueba-cuatro/01.webp",
+    "imageAlt": "Rectángulo de color de prueba 4",
+    "status": "publicado",
+    "updatedAt": "2026-10-12"
+  },
+  {
+    "id": "caja-de-prueba-cinco",
+    "name": "Caja de prueba cinco",
+    "description": "Producto ficticio 5 usado solo en las pruebas automáticas.",
+    "includes": ["Elemento de prueba A", "Elemento de prueba B"],
+    "price": 70000,
+    "category": "Hombre",
+    "featured": false,
+    "order": 5,
+    "image": "./caja-de-prueba-cinco/01.webp",
+    "imageAlt": "Rectángulo de color de prueba 5",
+    "status": "publicado",
+    "updatedAt": "2026-10-12"
+  }
+]

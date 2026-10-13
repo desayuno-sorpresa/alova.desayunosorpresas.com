@@ -1,0 +1,21 @@
+[
+  {
+    "id": "zona-de-prueba-norte",
+    "name": "Zona de prueba norte",
+    "schedule": "Lunes a sábado, 6:00 a 10:00 a. m.",
+    "fee": 0,
+    "order": 1,
+    "status": "publicado",
+    "updatedAt": "2026-10-12"
+  },
+  {
+    "id": "zona-de-prueba-sur",
+    "name": "Zona de prueba sur",
+    "schedule": "Domingos, 7:00 a 9:00 a. m.",
+    "fee": 8000,
+    "notes": "Nota ficticia de prueba.",
+    "order": 2,
+    "status": "publicado",
+    "updatedAt": "2026-10-12"
+  }
+]

@@ -1,0 +1,120 @@
+---
+/*
+ * Carrusel accesible sin rotación automática: desplazamiento nativo con scroll-snap
+ * (táctil, rueda, teclado sobre la pista enfocable) y botones anterior/siguiente que
+ * solo aparecen con JavaScript. Los elementos llegan por slot como <li>.
+ */
+interface Props {
+  /** Nombre accesible de la pista, p. ej. "Negocios destacados". */
+  label: string;
+}
+
+const { label } = Astro.props;
+---
+
+<div class="carousel" data-carousel>
+  <div class="carousel__controls" data-carousel-controls hidden>
+    <button type="button" class="carousel__button" data-carousel-prev aria-label="Anterior">
+      <span aria-hidden="true">‹</span>
+    </button>
+    <button type="button" class="carousel__button" data-carousel-next aria-label="Siguiente">
+      <span aria-hidden="true">›</span>
+    </button>
+  </div>
+  <ul class="carousel__track" data-carousel-track tabindex="0" aria-label={label}>
+    <slot />
+  </ul>
+</div>
+
+<script>
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+  for (const carousel of document.querySelectorAll<HTMLElement>('[data-carousel]')) {
+    const track = carousel.querySelector<HTMLElement>('[data-carousel-track]');
+    const controls = carousel.querySelector<HTMLElement>('[data-carousel-controls]');
+    const prev = carousel.querySelector<HTMLButtonElement>('[data-carousel-prev]');
+    const next = carousel.querySelector<HTMLButtonElement>('[data-carousel-next]');
+    if (!track || !controls || !prev || !next) continue;
+
+    const update = () => {
+      const max = track.scrollWidth - track.clientWidth;
+      // Sin desbordamiento no hay nada que desplazar: los botones sobran.
+      controls.hidden = max <= 1;
+      prev.disabled = track.scrollLeft <= 1;
+      next.disabled = track.scrollLeft >= max - 1;
+    };
+
+    const move = (direction: 1 | -1) => {
+      track.scrollBy({
+        left: direction * track.clientWidth * 0.9,
+        behavior: reducedMotion.matches ? 'auto' : 'smooth',
+      });
+    };
+
+    prev.addEventListener('click', () => move(-1));
+    next.addEventListener('click', () => move(1));
+    track.addEventListener('scroll', update, { passive: true });
+    new ResizeObserver(update).observe(track);
+    update();
+  }
+</script>
+
+<style>
+  .carousel {
+    display: grid;
+    gap: var(--space-1);
+  }
+
+  .carousel__controls {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-1);
+  }
+
+  .carousel__controls[hidden] {
+    display: none;
+  }
+
+  .carousel__button {
+    display: inline-grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border: 1px solid var(--color-muted);
+    border-radius: 50%;
+    background: var(--color-surface);
+    color: var(--color-text);
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .carousel__button:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+
+  .carousel__track {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: min(85%, 20rem);
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0 0 var(--space-1);
+    list-style: none;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+  }
+
+  .carousel__track > :global(li) {
+    scroll-snap-align: start;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .carousel__track {
+      scroll-behavior: auto;
+    }
+  }
+</style>

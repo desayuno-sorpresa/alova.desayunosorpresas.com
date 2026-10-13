@@ -1,0 +1,150 @@
+name: Sincronizar contenido desde Google Sheets
+
+# Flujo semiautomático:
+# - Hoja sin errores y build válido → PR con merge automático → despliegue.
+# - Hoja con errores → no se publica nada; se abre/actualiza un issue de revisión.
+# - Build fallido con hoja válida → PR sin merge para revisión manual.
+# Cuando un sync posterior termina bien, el issue de revisión se cierra solo.
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 11 * * *' # 6:00 a. m. hora de Colombia
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sync-content
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    name: Descargar, validar y publicar
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      actions: write
+    # Cada repo de negocio define su hoja en Settings → Variables (SPREADSHEET_ID).
+    if: vars.SPREADSHEET_ID != ''
+    env:
+      SPREADSHEET_ID: ${{ vars.SPREADSHEET_ID }}
+      BRANCH: sync/contenido
+      ISSUE_LABEL: revision-contenido
+      ISSUE_TITLE: 'Revisión necesaria: errores en la hoja de contenido'
+      GH_TOKEN: ${{ github.token }}
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Descargar contenido e imágenes
+        id: sync
+        continue-on-error: true
+        run: pnpm sync:content
+        env:
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+          SYNC_PROBLEMS_FILE: ${{ runner.temp }}/problemas.md
+
+      - name: Abrir o actualizar el issue de revisión
+        if: steps.sync.outcome == 'failure'
+        env:
+          PROBLEMS_FILE: ${{ runner.temp }}/problemas.md
+        run: |
+          gh label create "$ISSUE_LABEL" --color D93F0B \
+            --description "La hoja de contenido necesita corrección" --force
+          {
+            echo "La sincronización con Google Sheets se detuvo y **no se publicó nada**."
+            echo
+            if [ -s "$PROBLEMS_FILE" ]; then cat "$PROBLEMS_FILE"; else echo "Revisa el detalle en la ejecución."; fi
+            echo
+            echo "Cuando corrijas la hoja, lanza el sync de nuevo (o espera al de mañana): si ya no hay errores, se publicará y este issue se cerrará solo."
+            echo
+            echo "Ejecución: $RUN_URL"
+          } > issue-body.md
+          number=$(gh issue list --label "$ISSUE_LABEL" --state open --json number --jq '.[0].number')
+          if [ -n "$number" ]; then
+            gh issue edit "$number" --body-file issue-body.md
+            gh issue comment "$number" --body "Nueva ejecución con errores: $RUN_URL"
+          else
+            gh issue create --title "$ISSUE_TITLE" --label "$ISSUE_LABEL" \
+              --assignee "${{ github.repository_owner }}" --body-file issue-body.md
+          fi
+          echo "::error::La hoja tiene errores. Se abrió un issue de revisión."
+          exit 1
+
+      - name: Detectar cambios
+        id: diff
+        run: |
+          if [ -z "$(git status --porcelain -- src/content)" ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "Sin cambios en Google Sheets." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Valida esquema, imágenes y tipos antes de publicar.
+      - name: Validar con build
+        id: build
+        if: steps.diff.outputs.changed == 'true'
+        continue-on-error: true
+        run: pnpm build
+
+      - name: Crear o actualizar el PR
+        id: pr
+        if: steps.diff.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -C "$BRANCH"
+          git add -A src/content
+          git commit -m "Actualizar contenido desde Google Sheets"
+          git push --force origin "$BRANCH"
+          {
+            echo "Cambios descargados de Google Sheets el $(TZ=America/Bogota date '+%Y-%m-%d %H:%M')."
+            echo
+            if [ "${{ steps.build.outcome }}" = "success" ]; then
+              echo "La hoja no tiene errores y el build pasó: se publica automáticamente."
+            else
+              echo "⚠️ **El build falló con estos datos: necesita revisión manual antes de publicar.** Detalle: $RUN_URL"
+            fi
+            echo
+            echo '```'
+            git diff --stat HEAD~1 HEAD
+            echo '```'
+          } > pr-body.md
+          if [ "$(gh pr view "$BRANCH" --json state --jq .state 2>/dev/null)" = "OPEN" ]; then
+            gh pr edit "$BRANCH" --body-file pr-body.md
+          else
+            gh pr create --base main --head "$BRANCH" \
+              --title "Actualizar contenido desde Google Sheets" --body-file pr-body.md
+          fi
+          echo "url=$(gh pr view "$BRANCH" --json url --jq .url)" >> "$GITHUB_OUTPUT"
+
+      - name: Merge automático y despliegue
+        if: steps.diff.outputs.changed == 'true' && steps.build.outcome == 'success'
+        run: |
+          gh pr merge "$BRANCH" --squash --delete-branch
+          # Un merge hecho con GITHUB_TOKEN no dispara workflows por push; se lanza a mano.
+          gh workflow run deploy.yml --ref main
+          echo "Publicado automáticamente: ${{ steps.pr.outputs.url }}" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Cerrar el issue de revisión
+        if: steps.build.outcome != 'failure'
+        run: |
+          for number in $(gh issue list --label "$ISSUE_LABEL" --state open --json number --jq '.[].number'); do
+            gh issue close "$number" --comment "La hoja ya no tiene errores. Sincronización correcta: $RUN_URL"
+          done
+
+      - name: Fallar si el build necesita revisión
+        if: steps.build.outcome == 'failure'
+        run: |
+          echo "::error::El build falló con los datos de la hoja. PR para revisión: ${{ steps.pr.outputs.url }}"
+          exit 1

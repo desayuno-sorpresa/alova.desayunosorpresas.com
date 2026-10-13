@@ -1,0 +1,68 @@
+---
+import { getCollection } from 'astro:content';
+import { displayName } from '@/config/site';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { visibleItems } from '@/lib/publishing';
+
+const questions = visibleItems(
+  (await getCollection('preguntas')).map((entry) => ({ id: entry.id, ...entry.data })),
+  false,
+);
+// FAQPage solo con las preguntas y respuestas visibles en la página.
+const jsonLd =
+  questions.length > 0
+    ? {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: questions.map((item) => ({
+          '@type': 'Question',
+          name: item.question,
+          acceptedAnswer: { '@type': 'Answer', text: item.answer.join('\n') },
+        })),
+      }
+    : undefined;
+---
+
+<BaseLayout
+  title="Preguntas frecuentes"
+  description={`Respuestas sobre pedidos, pagos y entregas de ${displayName}.`}
+  {...(jsonLd ? { jsonLd } : {})}
+>
+  <section class="section container prose">
+    <h1>Preguntas frecuentes</h1>
+    {questions.length === 0 ? (
+      <p class="notice">Muy pronto publicaremos las preguntas frecuentes.</p>
+    ) : (
+      <div class="faq">
+        {questions.map((item) => (
+          <details id={item.id}>
+            <summary>{item.question}</summary>
+            {item.answer.map((paragraph) => (
+              <p>{paragraph}</p>
+            ))}
+          </details>
+        ))}
+      </div>
+    )}
+  </section>
+</BaseLayout>
+
+<style>
+  .prose {
+    max-width: 48rem;
+  }
+
+  .faq details {
+    border-bottom: 1px solid var(--color-border);
+    padding-block: var(--space-2);
+  }
+
+  .faq summary {
+    cursor: pointer;
+    font-weight: 600;
+  }
+
+  .faq p {
+    margin: var(--space-1) 0 0;
+  }
+</style>

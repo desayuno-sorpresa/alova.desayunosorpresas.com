@@ -1,0 +1,132 @@
+---
+import { getCollection } from 'astro:content';
+import Carousel from '@/components/Carousel.astro';
+import ProductCard from '@/components/ProductCard.astro';
+import { displayName, siteConfig } from '@/config/site';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { orderHref } from '@/lib/catalog';
+import { buildInquiryMessage } from '@/lib/order';
+import { visibleItems } from '@/lib/publishing';
+import { withBase } from '@/lib/url';
+import { buildWaMeUrl, normalizePhone } from '@/lib/whatsapp';
+
+const featured = visibleItems(
+  (await getCollection('productos')).map((entry) => ({ id: entry.id, ...entry.data })),
+  false,
+).filter((product) => product.featured);
+const whatsApp =
+  siteConfig.whatsApp && normalizePhone(siteConfig.whatsApp) ? siteConfig.whatsApp : null;
+const inquiryHref = whatsApp ? buildWaMeUrl(whatsApp, buildInquiryMessage(displayName)) : null;
+
+// Solo datos visibles en la página.
+const jsonLd = siteConfig.businessName
+  ? {
+      '@context': 'https://schema.org',
+      '@type': 'LocalBusiness',
+      name: siteConfig.businessName,
+      ...(siteConfig.description ? { description: siteConfig.description } : {}),
+      ...(Astro.site ? { url: Astro.site.href } : {}),
+      ...(whatsApp ? { telephone: whatsApp } : {}),
+      ...(siteConfig.city ? { areaServed: siteConfig.city } : {}),
+      ...(siteConfig.instagramUrl ? { sameAs: [siteConfig.instagramUrl] } : {}),
+    }
+  : undefined;
+---
+
+<BaseLayout
+  title={displayName}
+  description={siteConfig.description ?? `Desayunos sorpresa de ${displayName}.`}
+  {...(jsonLd ? { jsonLd } : {})}
+>
+  <section class="section container hero">
+    <h1>{displayName}</h1>
+    {siteConfig.tagline && <p class="lead">{siteConfig.tagline}</p>}
+    {siteConfig.city && <p class="hero__city">{siteConfig.city}</p>}
+    <p class="hero__actions">
+      <a class="button" href={withBase('catalogo/')}>
+        Ver catálogo
+      </a>
+      {inquiryHref && (
+        <a
+          class="button button--whatsapp"
+          href={inquiryHref}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Escríbenos por WhatsApp
+          <span class="visually-hidden"> (se abre en una pestaña nueva)</span>
+        </a>
+      )}
+    </p>
+  </section>
+
+  {featured.length > 0 && (
+    <section class="section container" aria-labelledby="destacados">
+      <div class="section-heading">
+        <h2 id="destacados">Desayunos destacados</h2>
+        <a href={withBase('catalogo/')}>Ver todo el catálogo</a>
+      </div>
+      <Carousel label="Desayunos destacados">
+        {featured.map((product) => (
+          <li>
+            <ProductCard
+              name={product.name}
+              description={product.description}
+              includes={product.includes}
+              price={product.price}
+              image={product.image}
+              imageAlt={product.imageAlt}
+              orderHref={orderHref(whatsApp, product.name, product.price)}
+              headingLevel={3}
+            />
+          </li>
+        ))}
+      </Carousel>
+    </section>
+  )}
+
+  <section class="section container" aria-labelledby="como-pedir">
+    <h2 id="como-pedir">Cómo pedir</h2>
+    <ol class="steps">
+      <li>
+        Elige tu desayuno en el <a href={withBase('catalogo/')}>catálogo</a>.
+      </li>
+      <li>Pulsa "Pedir por WhatsApp" y envía el mensaje que se prepara solo.</li>
+      <li>
+        Acordamos contigo la fecha, la dirección y el pago. Revisa las{' '}
+        <a href={withBase('entregas/')}>zonas y horarios de entrega</a>.
+      </li>
+    </ol>
+    <p>
+      ¿Tienes dudas? Mira las <a href={withBase('preguntas/')}>preguntas frecuentes</a>.
+    </p>
+  </section>
+</BaseLayout>
+
+<style>
+  .hero__city {
+    margin: 0;
+    color: var(--color-muted);
+    font-weight: 600;
+  }
+
+  .hero__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-top: var(--space-3);
+  }
+
+  .section-heading {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-1) var(--space-2);
+  }
+
+  .steps {
+    max-width: 40rem;
+    padding-left: 1.25rem;
+  }
+</style>

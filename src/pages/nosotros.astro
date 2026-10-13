@@ -1,0 +1,59 @@
+---
+import { Image } from 'astro:assets';
+import { getCollection } from 'astro:content';
+import { displayName } from '@/config/site';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { visibleItems } from '@/lib/publishing';
+
+const blocks = visibleItems(
+  (await getCollection('nosotros')).map((entry) => ({ id: entry.id, ...entry.data })),
+  false,
+);
+---
+
+<BaseLayout
+  title="Nosotros"
+  description={`Conoce a ${displayName} y su propuesta de desayunos sorpresa.`}
+>
+  <section class="section container prose">
+    <h1>Nosotros</h1>
+    {blocks.length === 0 ? (
+      <p class="notice">Muy pronto te contaremos nuestra historia.</p>
+    ) : (
+      blocks.map((block, index) => (
+        <section class="block" aria-label={block.title ?? `Parte ${index + 1}`}>
+          {block.title && <h2>{block.title}</h2>}
+          {block.image && block.imageAlt && (
+            <Image
+              src={block.image}
+              alt={block.imageAlt}
+              widths={[480, 800, 1200]}
+              sizes="(min-width: 48rem) 48rem, 100vw"
+              loading={index === 0 ? 'eager' : 'lazy'}
+              {...(index === 0 ? { fetchpriority: 'high' } : {})}
+            />
+          )}
+          {block.text.map((paragraph) => (
+            <p>{paragraph}</p>
+          ))}
+        </section>
+      ))
+    )}
+  </section>
+</BaseLayout>
+
+<style>
+  .prose {
+    max-width: 48rem;
+  }
+
+  .block + .block {
+    margin-top: var(--space-3);
+  }
+
+  .block img {
+    width: 100%;
+    border-radius: var(--radius);
+    margin-block: var(--space-2);
+  }
+</style>

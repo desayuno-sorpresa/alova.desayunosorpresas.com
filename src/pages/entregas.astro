@@ -1,0 +1,82 @@
+---
+import { getCollection } from 'astro:content';
+import { displayName } from '@/config/site';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { formatCop } from '@/lib/order';
+import { visibleItems } from '@/lib/publishing';
+
+const zones = visibleItems(
+  (await getCollection('zonas')).map((entry) => ({ id: entry.id, ...entry.data })),
+  false,
+);
+const feeText = (fee: number | undefined) =>
+  fee === undefined ? 'A convenir' : fee === 0 ? 'Gratis' : formatCop(fee);
+---
+
+<BaseLayout
+  title="Zonas y horarios de entrega"
+  description={`Zonas, horarios y costo de domicilio de los desayunos sorpresa de ${displayName}.`}
+>
+  <section class="section container">
+    <h1>Zonas y horarios de entrega</h1>
+    {zones.length === 0 ? (
+      <p class="notice">
+        Muy pronto publicaremos las zonas de entrega. Mientras tanto, pregúntanos por WhatsApp.
+      </p>
+    ) : (
+      <div class="table-wrap" tabindex="0" role="region" aria-labelledby="zonas-caption">
+        <table>
+          <caption id="zonas-caption">Zonas de entrega, horario y costo del domicilio</caption>
+          <thead>
+            <tr>
+              <th scope="col">Zona</th>
+              <th scope="col">Horario</th>
+              <th scope="col">Domicilio</th>
+              <th scope="col">Notas</th>
+            </tr>
+          </thead>
+          <tbody>
+            {zones.map((zone) => (
+              <tr>
+                <th scope="row">{zone.name}</th>
+                <td>{zone.schedule}</td>
+                <td>{feeText(zone.fee)}</td>
+                <td>{zone.notes ?? ''}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )}
+  </section>
+</BaseLayout>
+
+<style>
+  .table-wrap {
+    overflow-x: auto;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--color-surface);
+  }
+
+  caption {
+    margin-bottom: var(--space-1);
+    color: var(--color-muted);
+    text-align: left;
+  }
+
+  th,
+  td {
+    padding: var(--space-1) var(--space-2);
+    border-bottom: 1px solid var(--color-border);
+    text-align: left;
+    vertical-align: top;
+  }
+
+  thead th {
+    border-bottom-width: 2px;
+  }
+</style>

@@ -1,0 +1,35 @@
+---
+import { displayName, siteConfig } from '@/config/site';
+import { withBase } from '@/lib/url';
+
+interface Props {
+  title: string;
+  description: string;
+  noindex?: boolean;
+  /** Datos estructurados schema.org que reflejan contenido visible de la página. */
+  jsonLd?: Record<string, unknown>;
+}
+
+const { title, description, noindex = false, jsonLd } = Astro.props;
+const siteName = displayName;
+const fullTitle = title === siteName ? title : `${title} | ${siteName}`;
+const canonical = Astro.site ? new URL(Astro.url.pathname, Astro.site).href : undefined;
+// Evita que el contenido cierre la etiqueta <script> del JSON-LD.
+const jsonLdText = jsonLd ? JSON.stringify(jsonLd).replace(/</g, '\\u003c') : undefined;
+---
+
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>{fullTitle}</title>
+<meta name="description" content={description} />
+{noindex && <meta name="robots" content="noindex" />}
+{canonical && <link rel="canonical" href={canonical} />}
+<link rel="icon" type="image/svg+xml" href={withBase('favicon.svg')} />
+<meta property="og:type" content="website" />
+<meta property="og:title" content={fullTitle} />
+<meta property="og:description" content={description} />
+<meta property="og:locale" content={siteConfig.ogLocale} />
+<meta property="og:site_name" content={siteName} />
+{canonical && <meta property="og:url" content={canonical} />}
+<meta name="twitter:card" content="summary" />
+{jsonLdText && <script is:inline type="application/ld+json" set:html={jsonLdText} />}

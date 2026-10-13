@@ -1,0 +1,19 @@
+[
+  {
+    "id": "historia-de-prueba",
+    "title": "Historia de prueba",
+    "text": ["Texto ficticio del primer bloque."],
+    "image": "./historia-de-prueba/01.webp",
+    "imageAlt": "Rectángulo amarillo de prueba",
+    "order": 1,
+    "status": "publicado",
+    "updatedAt": "2026-10-12"
+  },
+  {
+    "id": "bloque-2",
+    "text": ["Texto ficticio del segundo bloque, sin foto."],
+    "order": 2,
+    "status": "publicado",
+    "updatedAt": "2026-10-12"
+  }
+]

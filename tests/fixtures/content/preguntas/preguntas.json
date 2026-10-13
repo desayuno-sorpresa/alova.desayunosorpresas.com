@@ -1,0 +1,18 @@
+[
+  {
+    "id": "pregunta-de-prueba-uno",
+    "question": "¿Pregunta de prueba uno?",
+    "answer": ["Respuesta ficticia uno."],
+    "order": 1,
+    "status": "publicado",
+    "updatedAt": "2026-10-12"
+  },
+  {
+    "id": "pregunta-de-prueba-dos",
+    "question": "¿Pregunta de prueba dos?",
+    "answer": ["Primer párrafo ficticio.", "Segundo párrafo ficticio."],
+    "order": 2,
+    "status": "publicado",
+    "updatedAt": "2026-10-12"
+  }
+]

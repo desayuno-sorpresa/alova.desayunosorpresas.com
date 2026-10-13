@@ -1,0 +1,10 @@
+/*
+ * Colores del negocio. Es el único archivo de estilos que se personaliza por negocio.
+ * Al cambiarlos, comprobar contraste WCAG AA (texto ≥ 4.5:1) con las pruebas e2e (axe).
+ */
+:root {
+  --color-primary: #8a3b12;
+  --color-primary-text: #ffffff;
+  --color-whatsapp: #075e54;
+  --color-whatsapp-text: #ffffff;
+}

@@ -1,0 +1,68 @@
+---
+interface Props {
+  siteName: string;
+  city: string | null;
+  /** Número visible y enlace directo de WhatsApp (sin mensaje). */
+  whatsApp: { label: string; href: string } | null;
+  instagramUrl: string | null;
+  /** Directorio de negocios al que pertenece el sitio. */
+  directory: { name: string; url: string };
+}
+
+const { siteName, city, whatsApp, instagramUrl, directory } = Astro.props;
+---
+
+<footer class="site-footer">
+  <div class="container site-footer__inner">
+    <div>
+      <p class="site-footer__name">{siteName}</p>
+      {city && <p>{city}</p>}
+      {whatsApp && (
+        <p>
+          WhatsApp: <a href={whatsApp.href}>{whatsApp.label}</a>
+        </p>
+      )}
+      {instagramUrl && (
+        <p>
+          <a href={instagramUrl} target="_blank" rel="noopener noreferrer">
+            Instagram<span class="visually-hidden"> (se abre en una pestaña nueva)</span>
+          </a>
+        </p>
+      )}
+    </div>
+    <p>
+      Negocio suscrito a{' '}
+      <a href={directory.url} target="_blank" rel="noopener noreferrer">
+        {directory.name}
+        <span class="visually-hidden"> (se abre en una pestaña nueva)</span>
+      </a>
+    </p>
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    margin-top: var(--space-4);
+    border-top: 1px solid var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-muted);
+    font-size: 0.95rem;
+  }
+
+  .site-footer__inner {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: var(--space-2);
+    padding-block: var(--space-3);
+  }
+
+  .site-footer p {
+    margin: 0;
+  }
+
+  .site-footer__name {
+    color: var(--color-text);
+    font-weight: 700;
+  }
+</style>

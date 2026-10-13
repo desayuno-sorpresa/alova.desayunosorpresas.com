@@ -1,0 +1,4 @@
+# esbuild y sharp usan binarios precompilados; sus scripts de instalación no son necesarios.
+allowBuilds:
+  esbuild: false
+  sharp: false
