@@ -33,7 +33,7 @@ export const siteConfig: SiteConfig = {
   tagline: null,
   description: null,
   city: null,
-  whatsApp: null,
+  whatsApp: '+57 312 506 5058',
   instagramUrl: null,
   lang: 'es-CO',
   ogLocale: 'es_CO',
