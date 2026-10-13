@@ -8,7 +8,9 @@ import { defineConfig } from 'astro/config';
  * - SITE_URL: p. ej. https://alova.desayunosorpresas.com (vacío = sin canonical ni sitemap)
  * - BASE_PATH: '/' con dominio propio; '/<repo>' si se publica en <cuenta>.github.io/<repo>.
  */
-const site = process.env.SITE_URL || undefined;
+// configure-pages puede devolver http:// si HTTPS aún no estaba activado: el sitio publicado
+// siempre se sirve por HTTPS, así que canonical, Open Graph y sitemap usan https://.
+const site = process.env.SITE_URL?.replace(/^http:\/\//, 'https://') || undefined;
 const base = process.env.BASE_PATH || '/';
 
 export default defineConfig({
