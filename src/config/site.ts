@@ -29,7 +29,7 @@ export interface SiteConfig {
 }
 
 export const siteConfig: SiteConfig = {
-  businessName: null,
+  businessName: 'Alova',
   tagline: null,
   description: null,
   city: null,

@@ -2,7 +2,13 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Qué es este repositorio
+## Este repositorio: Alova
+
+Sitio de **Alova** (`https://alova.desayunosorpresas.com`), creado desde la plantilla `desayuno-sorpresa/template_negocios`. Aquí solo se cambian los datos y colores de Alova (`src/config/site.ts`, `src/styles/theme.css`); las mejoras generales se hacen en la plantilla y se traen a este repo.
+
+Pendiente (no inventar): eslogan, descripción, ciudad/zona, WhatsApp de pedidos, Instagram, hoja de Google (`SPREADSHEET_ID`) y secreto `GOOGLE_SERVICE_ACCOUNT_JSON`.
+
+## Qué es la plantilla
 
 **Plantilla** para la página web de cada negocio de desayunos sorpresa suscrito a desayunosorpresas.com (p. ej. `alova.desayunosorpresas.com`). En GitHub es un *template repository* de la cuenta `desayuno-sorpresa`: cada negocio tiene **su propio repositorio creado desde esta plantilla**, con su configuración y **su propia hoja de Google**.
 
