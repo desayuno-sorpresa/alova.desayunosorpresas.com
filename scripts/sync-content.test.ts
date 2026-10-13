@@ -94,6 +94,9 @@ function fakeSource(sheets: Map<string, SheetGrid>, files: Record<string, DriveF
     async readSheets(names) {
       return new Map([...sheets].filter(([name]) => names.includes(name)));
     },
+    async listSheetTitles() {
+      return [...sheets.keys()];
+    },
     async downloadImage(fileId) {
       const file = files[fileId];
       if (!file) throw new Error(`Archivo ${fileId} no encontrado o no compartido.`);
@@ -186,7 +189,13 @@ describe('runSync', () => {
     const sheets = allSheets();
     sheets.delete('Productos');
     const error = await failure(fakeSource(sheets, await validFiles()), options);
-    expect(error.problems[0]).toEqual({ message: 'Falta la pestaña "Productos".' });
+    expect(error.problems).toEqual([
+      {
+        message:
+          'Falta la pestaña "Productos". Pestañas encontradas: "Zonas", "Preguntas", "Nosotros". ' +
+          'Cámbiale el nombre a la que corresponda o créala con ese nombre exacto.',
+      },
+    ]);
   });
 
   it('escribe los errores de foto en su fila y no toca el disco', async () => {

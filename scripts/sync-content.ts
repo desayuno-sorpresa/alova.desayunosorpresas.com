@@ -272,12 +272,20 @@ async function writeCollection<T, E extends { id: string; updatedAt: string }>(
 }
 
 const noImages = (): DriveImageRef[] => [];
+const noRows = <T>(): CollectionParse<T> => ({
+  items: [],
+  problems: [],
+  notes: [],
+  rows: 0,
+  drafts: 0,
+});
 
 export async function runSync(source: ContentSource, options: SyncOptions): Promise<SyncReport> {
   const sheets = await source.readSheets(ALL_SHEETS);
   const products: CollectionSpec<ProductDraft, ProductEntry> = {
     name: 'productos',
-    parsed: parseProducts(sheets.get(PRODUCTS_SHEET) ?? []),
+    // Si falta la pestaña se informa una sola vez (abajo), sin "faltan las columnas".
+    parsed: sheets.has(PRODUCTS_SHEET) ? parseProducts(sheets.get(PRODUCTS_SHEET) ?? []) : noRows(),
     id: (product) => product.slug,
     images: productImages,
     entry: buildProductEntry,
@@ -308,10 +316,13 @@ export async function runSync(source: ContentSource, options: SyncOptions): Prom
   const problems: Problem[] = all.flatMap((parsed) => parsed.problems);
   const notes: RowNote[] = all.flatMap((parsed) => parsed.notes);
   const warnings: string[] = [];
-  if (!sheets.has(PRODUCTS_SHEET))
-    problems.unshift({ message: `Falta la pestaña "${PRODUCTS_SHEET}".` });
-  for (const sheet of [ZONES_SHEET, FAQ_SHEET, ABOUT_SHEET]) {
-    if (!sheets.has(sheet)) warnings.push(`Crea la pestaña "${sheet}" para mostrar esa sección.`);
+  if (!sheets.has(PRODUCTS_SHEET)) {
+    const found = (await source.listSheetTitles()).map((title) => `"${title}"`).join(', ');
+    problems.unshift({
+      message:
+        `Falta la pestaña "${PRODUCTS_SHEET}". Pestañas encontradas: ${found || 'ninguna'}. ` +
+        'Cámbiale el nombre a la que corresponda o créala con ese nombre exacto.',
+    });
   }
 
   // Descarga y convierte todo antes de tocar el disco: si algo falla, no queda a medias.

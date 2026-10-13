@@ -18,6 +18,8 @@ export interface DriveFile {
 /** Lo que el sync necesita de Google; se inyecta para poder probarlo sin red. */
 export interface ContentSource {
   readSheets(names: readonly string[]): Promise<Map<string, SheetGrid>>;
+  /** Nombres de todas las pestañas de la hoja (para explicar cuál falta). */
+  listSheetTitles(): Promise<string[]>;
   downloadImage(fileId: string): Promise<DriveFile>;
   /** Escribe columnas completas desde la fila 2 de una pestaña. */
   writeColumns(sheet: string, writes: readonly ColumnWrite[]): Promise<void>;
@@ -78,11 +80,15 @@ export function createGoogleSource(
   }
 
   return {
+    async listSheetTitles() {
+      const meta = await request(`${sheetsBase}?fields=sheets.properties.title`);
+      const body = (await meta.json()) as SpreadsheetResponse;
+      return (body.sheets ?? []).flatMap((sheet) => sheet.properties?.title ?? []);
+    },
+
     async readSheets(names) {
       // Pedir una pestaña inexistente hace fallar toda la consulta: primero se listan.
-      const meta = await request(`${sheetsBase}?fields=sheets.properties.title`);
-      const metaBody = (await meta.json()) as SpreadsheetResponse;
-      const existing = new Set((metaBody.sheets ?? []).map((sheet) => sheet.properties?.title));
+      const existing = new Set(await this.listSheetTitles());
       const wanted = names.filter((name) => existing.has(name));
       const result = new Map<string, SheetGrid>();
       if (wanted.length === 0) return result;
