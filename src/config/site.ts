@@ -30,8 +30,9 @@ export interface SiteConfig {
 
 export const siteConfig: SiteConfig = {
   businessName: 'Alova',
-  tagline: null,
-  description: null,
+  tagline: 'Desayunos y regalos sorpresa para cada ocasión',
+  description:
+    'Desayunos sorpresa para hombre, mujer, niño y adulto mayor en Bogotá (Sabana norte). Pide por WhatsApp.',
   city: 'Bogotá (Sabana norte)',
   whatsApp: '+57 312 506 5058',
   instagramUrl: null,
