@@ -6,10 +6,9 @@ import ProductCard from '@/components/ProductCard.astro';
 import { displayName, siteConfig } from '@/config/site';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import { orderHref } from '@/lib/catalog';
-import { buildInquiryMessage } from '@/lib/order';
 import { visibleItems } from '@/lib/publishing';
 import { withBase } from '@/lib/url';
-import { buildWaMeUrl, normalizePhone } from '@/lib/whatsapp';
+import { normalizePhone } from '@/lib/whatsapp';
 
 const products = visibleItems(
   (await getCollection('productos')).map((entry) => ({ id: entry.id, ...entry.data })),
@@ -20,7 +19,6 @@ const featured = products.filter((product) => product.featured);
 const heroProduct = featured[0] ?? products[0];
 const whatsApp =
   siteConfig.whatsApp && normalizePhone(siteConfig.whatsApp) ? siteConfig.whatsApp : null;
-const inquiryHref = whatsApp ? buildWaMeUrl(whatsApp, buildInquiryMessage(displayName)) : null;
 
 // Franja de confianza: solo datos reales del catálogo y de la configuración.
 const trustPoints = [
@@ -66,17 +64,6 @@ const jsonLd = siteConfig.businessName
           <a class="button" href={withBase('catalogo/')}>
             Ver catálogo
           </a>
-          {inquiryHref && (
-            <a
-              class="button button--whatsapp"
-              href={inquiryHref}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Escríbenos por WhatsApp
-              <span class="visually-hidden"> (se abre en una pestaña nueva)</span>
-            </a>
-          )}
         </p>
       </div>
       {heroProduct && (

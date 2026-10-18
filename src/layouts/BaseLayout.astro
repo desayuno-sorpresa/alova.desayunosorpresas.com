@@ -5,6 +5,7 @@ import RecentOrdersToast from '@/components/RecentOrdersToast.astro';
 import SeoHead from '@/components/SeoHead.astro';
 import SiteFooter from '@/components/SiteFooter.astro';
 import SiteHeader from '@/components/SiteHeader.astro';
+import WhatsAppFloat from '@/components/WhatsAppFloat.astro';
 import { displayName, siteConfig } from '@/config/site';
 import { LIMITS } from '@/lib/content-sync/limits';
 import { buildInquiryMessage } from '@/lib/order';
@@ -64,6 +65,7 @@ const orders = (await getCollection('pedidos')).map((entry) => entry.data);
       maxDays={LIMITS.order.days}
       liveEndpoint={siteConfig.orderTracking.endpoint ?? undefined}
     />
+    {headerCta && <WhatsAppFloat href={headerCta.href} />}
     <SiteFooter
       siteName={displayName}
       city={siteConfig.city}
