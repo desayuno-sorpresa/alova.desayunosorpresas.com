@@ -58,7 +58,7 @@ export const siteConfig: SiteConfig = {
   announcement: 'Entregas en Bogotá (Sabana norte) · Pedidos por WhatsApp',
   orderTracking: {
     endpoint:
-      'https://script.google.com/macros/s/AKfycbx9tnyEmy2Wz6xanPm1kZ-EdpTSnTw7VIHfwoudHn_v-TjgyIr20Z24Je63KX710XX9/exec',
+      'https://script.google.com/macros/s/AKfycbwxO3-EOpJlW-WGd9q0848n3IN-5VxPjCCdl4h9mSbTjNrGnnQjHeS6IrDfBQ_4eS6A/exec',
   },
 };
 
