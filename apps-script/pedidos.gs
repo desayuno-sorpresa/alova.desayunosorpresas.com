@@ -15,8 +15,13 @@
  *
  * Una consulta NO es un pedido: pulsar el botón no prueba una venta. El sitio la muestra como
  * "Alguien consultó por «…»". Los pedidos reales los anota el negocio a mano con Tipo = Pedido.
- * El sync solo publica Fecha, Producto, Ciudad, Tipo y Estado; solo consultas de productos que
- * existen en el catálogo y una por producto y día. Para retirar una, poner Estado = Borrador.
+ *
+ * Aviso en vivo (doGet): el sitio pide a esta misma URL la lista reciente cada vez que se abre,
+ * sin esperar al sync. Solo devuelve Fecha, Producto, Ciudad (opcional) y Tipo de las filas con
+ * Estado = Publicado de los últimos días; las consultas solo si el producto está publicado en la
+ * pestaña Productos (se muestra con el nombre del catálogo) y una por producto y día. Nunca
+ * devuelve otras columnas (p. ej. el cliente). Para retirar una fila, poner Estado = Borrador
+ * (el cambio se nota en ~1 minuto por la caché).
  */
 
 const SPREADSHEET_ID = '1LrImMATgPHmHYEn6JxRZsjsIFqzmgHzOFMPnr56IOoI';
@@ -34,10 +39,27 @@ const MAX_LENGTH = 80;
 // Freno simple contra envíos masivos: máximo de consultas por cada 10 minutos.
 const MAX_PER_WINDOW = 60;
 const WINDOW_SECONDS = 600;
+// Aviso en vivo.
+const PRODUCTS_SHEET_NAME = 'Productos';
+const RECENT_DAYS = 14;
+const MAX_ITEMS = 20;
+const CACHE_SECONDS = 60;
+const TIME_ZONE = 'America/Bogota';
 
 /** Ejecutar una vez a mano: pide permisos y crea la pestaña o le añade la columna "Tipo". */
 function preparar() {
   getSheet_();
+}
+
+/** Lista reciente en JSON para el aviso del sitio (con caché de 1 minuto). */
+function doGet() {
+  const cache = CacheService.getScriptCache();
+  let body = cache.get('recientes');
+  if (!body) {
+    body = JSON.stringify(recientes_());
+    cache.put('recientes', body, CACHE_SECONDS);
+  }
+  return ContentService.createTextOutput(body).setMimeType(ContentService.MimeType.JSON);
 }
 
 function doPost(e) {
@@ -108,6 +130,112 @@ function getSheet_() {
       .setDataValidation(list_(['Pedido', 'Consulta']));
   }
   return sheet;
+}
+
+/** Filas de una pestaña como objetos {encabezado: valor}. */
+function readRows_(sheet) {
+  if (!sheet || sheet.getLastRow() < 2) return [];
+  const values = sheet.getDataRange().getValues();
+  const headers = values[0].map((header) => String(header).trim());
+  return values.slice(1).map((row) => {
+    const record = {};
+    headers.forEach((header, index) => {
+      record[header] = row[index];
+    });
+    return record;
+  });
+}
+
+/** Sin tildes, mayúsculas ni espacios repetidos: para comparar nombres. */
+function key_(text) {
+  return String(text || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+}
+
+/** Nombres de los productos publicados: clave comparable → nombre oficial del catálogo. */
+function catalog_(spreadsheet) {
+  const names = {};
+  readRows_(spreadsheet.getSheetByName(PRODUCTS_SHEET_NAME)).forEach((row) => {
+    if (key_(row['Estado']) !== 'publicado') return;
+    const name = String(row['Nombre'] || '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    if (name !== '') names[key_(name)] = name;
+  });
+  return names;
+}
+
+/** "2026-10-17 08:15", "17/10/2026" o una fecha de Sheets → "2026-10-17"; otro valor → null. */
+function dateOf_(value) {
+  let date = null;
+  if (Object.prototype.toString.call(value) === '[object Date]') {
+    date = Utilities.formatDate(value, TIME_ZONE, 'yyyy-MM-dd');
+  } else {
+    const text = String(value || '').trim();
+    const iso = /^(\d{4}-\d{2}-\d{2})(?:[ T]|$)/.exec(text);
+    const local = /^(\d{1,2})\/(\d{1,2})\/(\d{4})/.exec(text);
+    if (iso) date = iso[1];
+    else if (local)
+      date = local[3] + '-' + ('0' + local[2]).slice(-2) + '-' + ('0' + local[1]).slice(-2);
+  }
+  if (date === null) return null;
+  // Descarta fechas imposibles como 2026-02-30.
+  return new Date(date + 'T00:00:00Z').toISOString().slice(0, 10) === date ? date : null;
+}
+
+function daysBetween_(from, to) {
+  return Math.round((Date.parse(to + 'T00:00:00Z') - Date.parse(from + 'T00:00:00Z')) / 86400000);
+}
+
+/** Pedidos y consultas publicables, del más reciente al más antiguo. */
+function recientes_() {
+  const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const rows = readRows_(spreadsheet.getSheetByName(SHEET_NAME));
+  const catalog = catalog_(spreadsheet);
+  const today = Utilities.formatDate(new Date(), TIME_ZONE, 'yyyy-MM-dd');
+  const seen = {};
+  const items = [];
+  rows.forEach((row, index) => {
+    if (key_(row['Estado']) !== 'publicado') return;
+    const date = dateOf_(row['Fecha']);
+    if (date === null) return;
+    const age = daysBetween_(date, today);
+    if (age < 0 || age > RECENT_DAYS) return;
+    const type = key_(row['Tipo']);
+    let product = String(row['Producto'] || '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    let city = String(row['Ciudad'] || '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    if (type === 'consulta') {
+      const official = catalog[key_(product)];
+      if (!official) return;
+      const dayKey = date + '|' + key_(product);
+      if (seen[dayKey]) return;
+      seen[dayKey] = true;
+      product = official;
+      city = '';
+    } else if (type !== '' && type !== 'pedido') {
+      return;
+    }
+    if (product.length < 2 || product.length > MAX_LENGTH || city.length > 60) return;
+    const item = {
+      date: date,
+      product: product,
+      kind: type === 'consulta' ? 'consulta' : 'pedido',
+    };
+    if (city !== '') item.city = city;
+    items.push({ item: item, order: index });
+  });
+  items.sort((a, b) =>
+    a.item.date < b.item.date ? 1 : a.item.date > b.item.date ? -1 : b.order - a.order,
+  );
+  return items.slice(0, MAX_ITEMS).map((entry) => entry.item);
 }
 
 function list_(values) {

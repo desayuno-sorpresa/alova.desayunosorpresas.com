@@ -9,9 +9,7 @@ name: Sincronizar contenido desde Google Sheets
 on:
   workflow_dispatch:
   schedule:
-    # Cada hora: las consultas y pedidos nuevos salen en el aviso sin lanzar nada a mano.
-    # Sin cambios en la hoja no se abre PR ni se despliega.
-    - cron: '0 * * * *'
+    - cron: '0 11 * * *' # 6:00 a. m. hora de Colombia
 
 permissions:
   contents: read
@@ -67,7 +65,7 @@ jobs:
             echo
             if [ -s "$PROBLEMS_FILE" ]; then cat "$PROBLEMS_FILE"; else echo "Revisa el detalle en la ejecución."; fi
             echo
-            echo "Cuando corrijas la hoja, lanza el sync de nuevo (o espera al siguiente, que corre cada hora): si ya no hay errores, se publicará y este issue se cerrará solo."
+            echo "Cuando corrijas la hoja, lanza el sync de nuevo (o espera al de mañana): si ya no hay errores, se publicará y este issue se cerrará solo."
             echo
             echo "Ejecución: $RUN_URL"
           } > issue-body.md

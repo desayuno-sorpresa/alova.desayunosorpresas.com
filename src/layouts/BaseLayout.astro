@@ -59,7 +59,11 @@ const orders = (await getCollection('pedidos')).map((entry) => entry.data);
     {siteConfig.orderTracking.endpoint && (
       <OrderTracker endpoint={siteConfig.orderTracking.endpoint} />
     )}
-    <RecentOrdersToast orders={orders} maxDays={LIMITS.order.days} />
+    <RecentOrdersToast
+      orders={orders}
+      maxDays={LIMITS.order.days}
+      liveEndpoint={siteConfig.orderTracking.endpoint ?? undefined}
+    />
     <SiteFooter
       siteName={displayName}
       city={siteConfig.city}

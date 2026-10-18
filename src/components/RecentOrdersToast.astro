@@ -5,9 +5,14 @@ interface Props {
   orders: readonly RecentOrder[];
   /** Días que un pedido sigue visible (se filtra en el navegador con la fecha real). */
   maxDays: number;
+  /**
+   * URL del Apps Script que devuelve la lista reciente en JSON (doGet). Si responde, manda sobre
+   * la del último sync; si falla o tarda, se usa la del sync como respaldo.
+   */
+  liveEndpoint?: string | undefined;
 }
 
-const { orders, maxDays } = Astro.props;
+const { orders, maxDays, liveEndpoint } = Astro.props;
 // El texto no depende del día; "hoy" / "ayer" se calcula en el navegador.
 const items = newestFirst(orders).map((order) => ({
   date: order.date,
@@ -15,13 +20,14 @@ const items = newestFirst(orders).map((order) => ({
 }));
 ---
 
-{items.length > 0 && (
+{(items.length > 0 || liveEndpoint) && (
   <aside
     class="orders-toast"
     aria-label="Pedidos recientes"
     data-orders-toast
     data-items={JSON.stringify(items)}
     data-max-days={maxDays}
+    data-live-endpoint={liveEndpoint}
     hidden
   >
     <svg class="orders-toast__icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -44,7 +50,7 @@ const items = newestFirst(orders).map((order) => ({
 )}
 
 <script>
-  import { dateInTimeZone, relativeDay } from '@/lib/recent-orders';
+  import { dateInTimeZone, orderNotice, relativeDay } from '@/lib/recent-orders';
 
   const FIRST_DELAY_MS = 4000;
   const SHOW_MS = 7000;
@@ -52,9 +58,19 @@ const items = newestFirst(orders).map((order) => ({
   const FADE_MS = 300;
   const STORAGE_KEY = 'avisos-pedidos-ocultos';
 
+  const LIVE_TIMEOUT_MS = 6000;
+  const MAX_LIVE_ITEMS = 20;
+  const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
   interface ToastItem {
     text: string;
     when: string;
+  }
+
+  /** Aviso sin el "hoy/ayer", que se calcula al mostrarlo. */
+  interface Entry {
+    date: string;
+    text: string;
   }
 
   function isDismissed(): boolean {
@@ -73,9 +89,8 @@ const items = newestFirst(orders).map((order) => ({
     }
   }
 
-  function readItems(toast: HTMLElement): ToastItem[] {
-    const today = dateInTimeZone(new Date());
-    const maxDays = Number(toast.dataset['maxDays']);
+  /** Avisos del último sync, incrustados en la página. */
+  function buildEntries(toast: HTMLElement): Entry[] {
     let raw: unknown;
     try {
       raw = JSON.parse(toast.dataset['items'] ?? '[]');
@@ -83,19 +98,54 @@ const items = newestFirst(orders).map((order) => ({
       return [];
     }
     if (!Array.isArray(raw)) return [];
-    const items: ToastItem[] = [];
+    const entries: Entry[] = [];
     for (const entry of raw) {
       const date: unknown = entry?.date;
       const text: unknown = entry?.text;
-      if (typeof date !== 'string' || typeof text !== 'string') continue;
+      if (typeof date === 'string' && typeof text === 'string') entries.push({ date, text });
+    }
+    return entries;
+  }
+
+  /**
+   * Avisos en vivo del Apps Script. Se valida cada campo (la URL es pública) y el texto se arma
+   * aquí, nunca se usa HTML ajeno. `null` si falla, tarda o no tiene la forma esperada.
+   */
+  async function liveEntries(endpoint: string): Promise<Entry[] | null> {
+    try {
+      const response = await fetch(endpoint, { signal: AbortSignal.timeout(LIVE_TIMEOUT_MS) });
+      if (!response.ok) return null;
+      const raw: unknown = await response.json();
+      if (!Array.isArray(raw)) return null;
+      const entries: Entry[] = [];
+      for (const item of raw.slice(0, MAX_LIVE_ITEMS)) {
+        const date: unknown = item?.date;
+        const product: unknown = item?.product;
+        const city: unknown = item?.city;
+        const kind: unknown = item?.kind;
+        if (typeof date !== 'string' || !ISO_DATE.test(date)) continue;
+        if (typeof product !== 'string' || product.length < 2 || product.length > 80) continue;
+        if (city !== undefined && (typeof city !== 'string' || city.length > 60)) continue;
+        if (kind !== 'pedido' && kind !== 'consulta') continue;
+        entries.push({ date, text: orderNotice({ date, product, city, kind }) });
+      }
+      return entries;
+    } catch {
+      return null;
+    }
+  }
+
+  function toItems(entries: readonly Entry[], maxDays: number): ToastItem[] {
+    const today = dateInTimeZone(new Date());
+    const items: ToastItem[] = [];
+    for (const { date, text } of entries) {
       const when = relativeDay(date, today, maxDays);
       if (when !== null) items.push({ text, when: when.charAt(0).toUpperCase() + when.slice(1) });
     }
     return items;
   }
 
-  function start(toast: HTMLElement): void {
-    const items = readItems(toast);
+  function start(toast: HTMLElement, items: readonly ToastItem[]): void {
     const text = toast.querySelector<HTMLElement>('[data-toast-text]');
     const when = toast.querySelector<HTMLElement>('[data-toast-when]');
     const close = toast.querySelector<HTMLButtonElement>('[data-toast-close]');
@@ -147,8 +197,17 @@ const items = newestFirst(orders).map((order) => ({
     schedule(show, FIRST_DELAY_MS);
   }
 
+  async function run(toast: HTMLElement): Promise<void> {
+    const endpoint = toast.dataset['liveEndpoint'] ?? '';
+    const live = endpoint === '' ? null : await liveEntries(endpoint);
+    const entries = live ?? buildEntries(toast);
+    start(toast, toItems(entries, Number(toast.dataset['maxDays'])));
+    // Marca para las pruebas: ya se decidió de dónde salen los datos.
+    toast.dataset['ready'] = 'true';
+  }
+
   const toast = document.querySelector<HTMLElement>('[data-orders-toast]');
-  if (toast && !isDismissed()) start(toast);
+  if (toast && !isDismissed()) void run(toast);
 </script>
 
 <style>
