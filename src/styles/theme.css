@@ -2,12 +2,15 @@
  * Colores y fuentes del negocio. Es el único archivo de estilos que se personaliza por negocio.
  * Al cambiarlos, comprobar contraste WCAG AA (texto ≥ 4.5:1) con las pruebas e2e (axe).
  *
- * Alova: rosa frambuesa + oro rosa, regla 60-30-10:
- *   60 % neutros cálidos (fondo rosado muy claro, blanco), 30 % rosa frambuesa (header, botones,
- *   franja) y 10 % oro rosa (detalles: línea del header, borde del aviso, cifras de la franja).
- * Contraste medido: blanco sobre rosa 5.6:1; rosa sobre fondo 5.3:1; texto 13.6:1; texto
- * secundario 7.0:1; oro rosa oscuro (texto) 6.0:1. El oro rosa clásico (#b76e79) solo se usa en
- * detalles decorativos y cifras grandes (≥ 3:1): como texto pequeño no pasaría AA.
+ * Alova: rosado claro + dorado y oro rosa en las alertas.
+ *   - Superficies en rosado claro (fondo, header, franja): se ven suaves y el texto es
+ *     marrón-ciruela oscuro (≥ 10:1).
+ *   - Un solo rosa firme (#bc3c72) para botones y enlaces: el blanco sobre él da 5.2:1. Un rosa
+ *     más claro no pasaría AA con texto blanco (por eso no se usa).
+ *   - Oro rosa (#b76e79) en detalles: línea del header, icono del aviso; su versión oscura
+ *     (#8f4a55) cuando es texto.
+ *   - Alertas en dorado: barra superior en champán con texto marrón (9.6:1) y aviso de actividad
+ *     en marfil con borde dorado oscuro (#a9801f).
  */
 @font-face {
   font-family: 'Nunito';
@@ -34,20 +37,41 @@
 }
 
 :root {
-  --color-primary: #b5386a; /* rosa frambuesa */
+  /* Base */
+  --color-primary: #bc3c72; /* rosa firme: botones y enlaces */
   --color-primary-text: #ffffff;
   --color-whatsapp: #075e54;
   --color-whatsapp-text: #ffffff;
-  --color-bg: #fff6f4; /* blush cálido */
+  --color-bg: #fff4f6; /* rosado muy claro */
   --color-surface: #ffffff;
-  --color-text: #3a2327;
-  --color-muted: #6f4c52;
-  --color-border: #ebcfcc;
+  --color-text: #4a2030;
+  --color-muted: #755560;
+  --color-border: #f2c9d3;
 
-  --color-accent: #b76e79; /* oro rosa clásico: solo decorativo */
-  --color-accent-text: #8f4a55; /* oro rosa oscuro: apto para texto */
-  --color-accent-on-primary: #f2c7bc; /* oro rosa claro sobre el rosa frambuesa */
-  --color-tint: #fbe4e8; /* rosa suave del degradado del hero */
+  /* Acentos oro rosa */
+  --color-accent: #b76e79; /* decorativo */
+  --color-accent-text: #8f4a55; /* texto pequeño */
+  --color-accent-on-primary: #8f4a55; /* cifras de la franja, sobre rosado claro */
+  --color-tint: #fde7ec; /* degradado del hero */
+
+  /* Superficies rosado claro */
+  --color-header-bg: #fde7ec;
+  --color-header-text: #4a2030;
+  --color-header-cta-bg: #bc3c72;
+  --color-header-cta-text: #ffffff;
+  --color-header-cta-border: #bc3c72;
+  --color-header-cta-hover-bg: #a8305f;
+  --color-header-cta-hover-text: #ffffff;
+  --color-strip-bg: #f9d5de;
+  --color-strip-text: #4a2030;
+
+  /* Alertas en dorado */
+  --color-alert-bg: #f6e7be; /* champán */
+  --color-alert-text: #4a3410;
+  --color-toast-bg: #fffbf0; /* marfil */
+  --color-toast-border: #a9801f; /* dorado oscuro */
+  --color-toast-icon: #b76e79; /* oro rosa */
+  --color-toast-icon-text: #ffffff;
 
   --font-sans: 'Nunito', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
   --font-serif: 'Lora', Georgia, 'Times New Roman', serif;

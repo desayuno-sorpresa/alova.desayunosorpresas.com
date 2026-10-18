@@ -16,6 +16,24 @@
   --color-accent-text: var(--color-primary);
   --color-accent-on-primary: var(--color-primary-text);
   --color-tint: var(--color-bg);
+  /* Superficies con color propio: por defecto siguen al primario (look original). Un negocio con
+     paleta clara las redefine en theme.css; el texto de cada una debe contrastar ≥ 4.5:1. */
+  --color-header-bg: var(--color-primary);
+  --color-header-text: var(--color-primary-text);
+  --color-header-cta-bg: transparent;
+  --color-header-cta-text: var(--color-header-text);
+  --color-header-cta-border: var(--color-header-cta-text);
+  --color-header-cta-hover-bg: var(--color-header-text);
+  --color-header-cta-hover-text: var(--color-header-bg);
+  --color-strip-bg: var(--color-primary);
+  --color-strip-text: var(--color-primary-text);
+  /* Alertas: barra superior y aviso de actividad. */
+  --color-alert-bg: var(--color-text);
+  --color-alert-text: var(--color-primary-text);
+  --color-toast-bg: var(--color-surface);
+  --color-toast-border: var(--color-accent);
+  --color-toast-icon: var(--color-primary);
+  --color-toast-icon-text: var(--color-primary-text);
   --color-whatsapp: #075e54;
   --color-whatsapp-text: #ffffff;
   --color-focus: #1d4ed8;
