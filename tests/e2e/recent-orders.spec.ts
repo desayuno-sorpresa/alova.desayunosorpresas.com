@@ -123,10 +123,11 @@ test.describe('aviso en vivo (Apps Script)', () => {
 });
 
 test.describe('registro de consultas', () => {
-  test('el clic en "Pedir por WhatsApp" registra solo el producto, una vez por visita', async ({
+  test('el clic en "Pedir por WhatsApp" registra solo el producto y no duplica un doble clic', async ({
     page,
   }) => {
     const bodies: string[] = [];
+    await page.clock.install({ time: NOW });
     // Nunca se llama al Apps Script real: se intercepta (la lista en vivo responde vacía).
     await page.route(APPS_SCRIPT, async (route) => {
       if (route.request().method() !== 'POST') {
@@ -162,8 +163,14 @@ test.describe('registro de consultas', () => {
     expect(new URLSearchParams(bodies[0]).get('product')).toBe(product);
     expect([...new URLSearchParams(bodies[0]).keys()]).toEqual(['product']);
 
+    // Un segundo clic enseguida (doble clic) no se duplica.
     await order.click();
     await page.waitForTimeout(300);
     expect(bodies).toHaveLength(1);
+
+    // Pasado el freno, otro pedido del mismo producto sí se registra: cada clic real cuenta.
+    await page.clock.runFor(11_000);
+    await order.click();
+    await expect.poll(() => bodies.length).toBe(2);
   });
 });
