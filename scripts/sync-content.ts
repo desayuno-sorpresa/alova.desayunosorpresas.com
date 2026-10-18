@@ -26,6 +26,7 @@ import {
 } from '../src/lib/content-sync/faq.ts';
 import {
   ABOUT_SHEET,
+  ORDERS_SHEET,
   ALL_SHEETS,
   FAQ_SHEET,
   formatProblem,
@@ -35,6 +36,13 @@ import {
   ZONES_SHEET,
   type Problem,
 } from '../src/lib/content-sync/problems.ts';
+import {
+  buildOrderEntry,
+  catalogKey,
+  parseOrders,
+  type OrderDraft,
+  type OrderEntry,
+} from '../src/lib/content-sync/orders.ts';
 import {
   buildProductEntry,
   parseProducts,
@@ -311,7 +319,19 @@ export async function runSync(source: ContentSource, options: SyncOptions): Prom
     images: aboutImages,
     entry: buildAboutEntry,
   };
-  const all = [products.parsed, zones.parsed, faq.parsed, about.parsed];
+  // Pestaña opcional sin aviso si falta: pedidos reales para el aviso de actividad.
+  const orders: CollectionSpec<OrderDraft, OrderEntry> = {
+    name: 'pedidos',
+    parsed: parseOrders(
+      sheets.get(ORDERS_SHEET) ?? [],
+      options.today,
+      new Set(products.parsed.items.map((product) => catalogKey(product.name))),
+    ),
+    id: (order) => order.id,
+    images: noImages,
+    entry: buildOrderEntry,
+  };
+  const all = [products.parsed, zones.parsed, faq.parsed, about.parsed, orders.parsed];
 
   const problems: Problem[] = all.flatMap((parsed) => parsed.problems);
   const notes: RowNote[] = all.flatMap((parsed) => parsed.notes);
@@ -356,6 +376,7 @@ export async function runSync(source: ContentSource, options: SyncOptions): Prom
     { spec: zones, ...(await writeCollection(zones, empty, options)) },
     { spec: faq, ...(await writeCollection(faq, empty, options)) },
     { spec: about, ...(await writeCollection(about, rendered.get(about.name) ?? empty, options)) },
+    { spec: orders, ...(await writeCollection(orders, empty, options)) },
   ];
   return {
     warnings,

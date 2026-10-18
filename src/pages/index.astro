@@ -1,4 +1,5 @@
 ---
+import { Image } from 'astro:assets';
 import { getCollection } from 'astro:content';
 import Carousel from '@/components/Carousel.astro';
 import ProductCard from '@/components/ProductCard.astro';
@@ -10,13 +11,30 @@ import { visibleItems } from '@/lib/publishing';
 import { withBase } from '@/lib/url';
 import { buildWaMeUrl, normalizePhone } from '@/lib/whatsapp';
 
-const featured = visibleItems(
+const products = visibleItems(
   (await getCollection('productos')).map((entry) => ({ id: entry.id, ...entry.data })),
   false,
-).filter((product) => product.featured);
+);
+const featured = products.filter((product) => product.featured);
+// Imagen del hero: el primer destacado o, si no hay, el primer producto del catálogo.
+const heroProduct = featured[0] ?? products[0];
 const whatsApp =
   siteConfig.whatsApp && normalizePhone(siteConfig.whatsApp) ? siteConfig.whatsApp : null;
 const inquiryHref = whatsApp ? buildWaMeUrl(whatsApp, buildInquiryMessage(displayName)) : null;
+
+// Franja de confianza: solo datos reales del catálogo y de la configuración.
+const trustPoints = [
+  ...(products.length > 0
+    ? [
+        {
+          value: String(products.length),
+          label: products.length === 1 ? 'desayuno en el catálogo' : 'desayunos en el catálogo',
+        },
+      ]
+    : []),
+  ...(siteConfig.city ? [{ value: 'Entregas', label: `en ${siteConfig.city}` }] : []),
+  ...(whatsApp ? [{ value: 'Pedidos', label: 'por WhatsApp, con el mensaje listo' }] : []),
+];
 
 // Solo datos visibles en la página.
 const jsonLd = siteConfig.businessName
@@ -38,27 +56,55 @@ const jsonLd = siteConfig.businessName
   description={siteConfig.description ?? `Desayunos sorpresa de ${displayName}.`}
   {...(jsonLd ? { jsonLd } : {})}
 >
-  <section class="section container hero">
-    <h1>{displayName}</h1>
-    {siteConfig.tagline && <p class="lead">{siteConfig.tagline}</p>}
-    {siteConfig.city && <p class="hero__city">{siteConfig.city}</p>}
-    <p class="hero__actions">
-      <a class="button" href={withBase('catalogo/')}>
-        Ver catálogo
-      </a>
-      {inquiryHref && (
-        <a
-          class="button button--whatsapp"
-          href={inquiryHref}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Escríbenos por WhatsApp
-          <span class="visually-hidden"> (se abre en una pestaña nueva)</span>
-        </a>
+  <section class="hero">
+    <div class="container hero__inner">
+      <div class="hero__text">
+        {siteConfig.city && <p class="eyebrow">{siteConfig.city}</p>}
+        <h1>{displayName}</h1>
+        {siteConfig.tagline && <p class="lead">{siteConfig.tagline}</p>}
+        <p class="hero__actions">
+          <a class="button" href={withBase('catalogo/')}>
+            Ver catálogo
+          </a>
+          {inquiryHref && (
+            <a
+              class="button button--whatsapp"
+              href={inquiryHref}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Escríbenos por WhatsApp
+              <span class="visually-hidden"> (se abre en una pestaña nueva)</span>
+            </a>
+          )}
+        </p>
+      </div>
+      {heroProduct && (
+        <Image
+          class="hero__image"
+          src={heroProduct.image}
+          alt={heroProduct.imageAlt}
+          widths={[480, 800, 1000]}
+          sizes="(min-width: 60rem) 34rem, 100vw"
+          loading="eager"
+          fetchpriority="high"
+        />
       )}
-    </p>
+    </div>
   </section>
+
+  {trustPoints.length > 0 && (
+    <section class="trust" aria-label={`Cómo trabaja ${displayName}`}>
+      <ul class="container trust__list">
+        {trustPoints.map((point) => (
+          <li>
+            <strong>{point.value}</strong>
+            <span>{point.label}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )}
 
   {featured.length > 0 && (
     <section class="section container" aria-labelledby="destacados">
@@ -104,10 +150,72 @@ const jsonLd = siteConfig.businessName
 </BaseLayout>
 
 <style>
-  .hero__city {
-    margin: 0;
-    color: var(--color-muted);
-    font-weight: 600;
+  .hero {
+    background: linear-gradient(180deg, var(--color-surface), var(--color-tint));
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .hero__inner {
+    display: grid;
+    gap: var(--space-3);
+    align-items: center;
+    padding-block: var(--space-4);
+  }
+
+  .hero__image {
+    width: 100%;
+    border-radius: var(--radius);
+    box-shadow: 0 1rem 2.5rem rgb(0 0 0 / 0.12);
+  }
+
+  .eyebrow {
+    margin: 0 0 var(--space-1);
+    color: var(--color-accent-text);
+    font-size: 0.8125rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .trust {
+    background: var(--color-primary);
+    color: var(--color-primary-text);
+  }
+
+  .trust__list {
+    display: grid;
+    gap: var(--space-2);
+    margin-block: 0;
+    padding-block: var(--space-3);
+    list-style: none;
+  }
+
+  .trust__list li {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .trust__list strong {
+    color: var(--color-accent-on-primary);
+    font-family: var(--font-serif);
+    font-size: 1.75rem;
+    line-height: 1;
+  }
+
+  .trust__list span {
+    font-size: 0.9375rem;
+  }
+
+  @media (min-width: 48rem) {
+    .hero__inner {
+      grid-template-columns: 1.1fr 1fr;
+      gap: var(--space-4);
+    }
+
+    .trust__list {
+      grid-template-columns: repeat(3, 1fr);
+    }
   }
 
   .hero__actions {

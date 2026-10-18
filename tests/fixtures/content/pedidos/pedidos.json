@@ -1,0 +1,32 @@
+[
+  {
+    "id": "2026-10-17-fila-4",
+    "date": "2026-10-17",
+    "product": "Desayuno de prueba",
+    "city": "Chía",
+    "updatedAt": "2026-10-17",
+    "kind": "pedido"
+  },
+  {
+    "id": "2026-10-17-fila-5",
+    "date": "2026-10-17",
+    "product": "Caja de prueba uno",
+    "kind": "consulta",
+    "updatedAt": "2026-10-17"
+  },
+  {
+    "id": "2026-10-16-fila-3",
+    "date": "2026-10-16",
+    "product": "Desayuno para mujer",
+    "updatedAt": "2026-10-17",
+    "kind": "pedido"
+  },
+  {
+    "id": "2026-09-01-fila-2",
+    "date": "2026-09-01",
+    "product": "Desayuno antiguo",
+    "city": "Cali",
+    "updatedAt": "2026-10-17",
+    "kind": "pedido"
+  }
+]

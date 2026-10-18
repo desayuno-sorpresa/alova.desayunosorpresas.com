@@ -1,0 +1,245 @@
+---
+import { newestFirst, orderNotice, type RecentOrder } from '@/lib/recent-orders';
+
+interface Props {
+  orders: readonly RecentOrder[];
+  /** Días que un pedido sigue visible (se filtra en el navegador con la fecha real). */
+  maxDays: number;
+}
+
+const { orders, maxDays } = Astro.props;
+// El texto no depende del día; "hoy" / "ayer" se calcula en el navegador.
+const items = newestFirst(orders).map((order) => ({
+  date: order.date,
+  text: orderNotice(order),
+}));
+---
+
+{items.length > 0 && (
+  <aside
+    class="orders-toast"
+    aria-label="Pedidos recientes"
+    data-orders-toast
+    data-items={JSON.stringify(items)}
+    data-max-days={maxDays}
+    hidden
+  >
+    <svg class="orders-toast__icon" viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="12" r="11" />
+      <path d="M7 12.5l3.2 3.2L17 9" />
+    </svg>
+    <p class="orders-toast__body">
+      <span data-toast-text />
+      <span class="orders-toast__when" data-toast-when />
+    </p>
+    <button
+      class="orders-toast__close"
+      type="button"
+      aria-label="Ocultar avisos de pedidos"
+      data-toast-close
+    >
+      <span aria-hidden="true">×</span>
+    </button>
+  </aside>
+)}
+
+<script>
+  import { dateInTimeZone, relativeDay } from '@/lib/recent-orders';
+
+  const FIRST_DELAY_MS = 4000;
+  const SHOW_MS = 7000;
+  const GAP_MS = 9000;
+  const FADE_MS = 300;
+  const STORAGE_KEY = 'avisos-pedidos-ocultos';
+
+  interface ToastItem {
+    text: string;
+    when: string;
+  }
+
+  function isDismissed(): boolean {
+    try {
+      return sessionStorage.getItem(STORAGE_KEY) === '1';
+    } catch {
+      return false;
+    }
+  }
+
+  function remember(): void {
+    try {
+      sessionStorage.setItem(STORAGE_KEY, '1');
+    } catch {
+      // Sin almacenamiento: se oculta solo en esta página.
+    }
+  }
+
+  function readItems(toast: HTMLElement): ToastItem[] {
+    const today = dateInTimeZone(new Date());
+    const maxDays = Number(toast.dataset['maxDays']);
+    let raw: unknown;
+    try {
+      raw = JSON.parse(toast.dataset['items'] ?? '[]');
+    } catch {
+      return [];
+    }
+    if (!Array.isArray(raw)) return [];
+    const items: ToastItem[] = [];
+    for (const entry of raw) {
+      const date: unknown = entry?.date;
+      const text: unknown = entry?.text;
+      if (typeof date !== 'string' || typeof text !== 'string') continue;
+      const when = relativeDay(date, today, maxDays);
+      if (when !== null) items.push({ text, when: when.charAt(0).toUpperCase() + when.slice(1) });
+    }
+    return items;
+  }
+
+  function start(toast: HTMLElement): void {
+    const items = readItems(toast);
+    const text = toast.querySelector<HTMLElement>('[data-toast-text]');
+    const when = toast.querySelector<HTMLElement>('[data-toast-when]');
+    const close = toast.querySelector<HTMLButtonElement>('[data-toast-close]');
+    if (items.length === 0 || !text || !when || !close) return;
+
+    let index = 0;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const schedule = (action: () => void, ms: number) => {
+      clearTimeout(timer);
+      timer = setTimeout(action, ms);
+    };
+
+    const hide = () => {
+      toast.classList.remove('is-visible');
+      index += 1;
+      schedule(() => {
+        toast.hidden = true;
+        // Cada pedido se muestra una sola vez por visita.
+        if (index < items.length) schedule(show, GAP_MS);
+      }, FADE_MS);
+    };
+
+    const show = () => {
+      const item = items[index];
+      if (!item) return;
+      text.textContent = item.text;
+      when.textContent = item.when;
+      toast.hidden = false;
+      requestAnimationFrame(() => toast.classList.add('is-visible'));
+      schedule(hide, SHOW_MS);
+    };
+
+    // Pausa mientras el puntero o el foco están sobre el aviso (tiempo suficiente para leerlo).
+    const pause = () => clearTimeout(timer);
+    const resume = () => {
+      if (!toast.hidden) schedule(hide, SHOW_MS);
+    };
+    toast.addEventListener('mouseenter', pause);
+    toast.addEventListener('mouseleave', resume);
+    toast.addEventListener('focusin', pause);
+    toast.addEventListener('focusout', resume);
+
+    close.addEventListener('click', () => {
+      clearTimeout(timer);
+      toast.hidden = true;
+      remember();
+    });
+
+    schedule(show, FIRST_DELAY_MS);
+  }
+
+  const toast = document.querySelector<HTMLElement>('[data-orders-toast]');
+  if (toast && !isDismissed()) start(toast);
+</script>
+
+<style>
+  .orders-toast {
+    position: fixed;
+    left: var(--space-2);
+    bottom: var(--space-2);
+    z-index: 6;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    width: min(22rem, calc(100vw - 2 * var(--space-2)));
+    padding: 0.875rem 0.75rem 0.875rem 1rem;
+    background: var(--color-surface);
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+    border-left: 4px solid var(--color-accent);
+    border-radius: var(--radius);
+    box-shadow: 0 0.75rem 2rem rgb(36 27 43 / 0.18);
+    opacity: 0;
+    transform: translateY(0.75rem);
+    transition:
+      opacity 0.3s ease,
+      transform 0.3s ease;
+  }
+
+  .orders-toast[hidden] {
+    display: none;
+  }
+
+  .orders-toast.is-visible {
+    opacity: 1;
+    transform: none;
+  }
+
+  .orders-toast__icon {
+    flex: none;
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+
+  .orders-toast__icon circle {
+    fill: var(--color-primary);
+  }
+
+  .orders-toast__icon path {
+    fill: none;
+    stroke: var(--color-primary-text);
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .orders-toast__body {
+    display: grid;
+    gap: 0.125rem;
+    margin: 0;
+    font-size: 0.9375rem;
+    line-height: 1.4;
+  }
+
+  .orders-toast__when {
+    color: var(--color-muted);
+    font-size: 0.8125rem;
+  }
+
+  .orders-toast__close {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    margin: -0.625rem -0.5rem -0.625rem auto;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--color-muted);
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .orders-toast__close:hover {
+    color: var(--color-text);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .orders-toast {
+      transform: none;
+      transition: none;
+    }
+  }
+</style>

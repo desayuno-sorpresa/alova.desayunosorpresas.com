@@ -95,6 +95,9 @@ const { label } = Astro.props;
   }
 
   .carousel__track {
+    /* Contiene los textos ocultos (position: absolute) de las tarjetas: sin esto escapan
+       del desplazamiento y ensanchan la página en móvil. */
+    position: relative;
     display: grid;
     grid-auto-flow: column;
     grid-auto-columns: min(85%, 20rem);

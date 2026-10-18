@@ -26,6 +26,15 @@ export interface SiteConfig {
   /** Directorio que agrupa a los negocios suscritos. */
   directory: { name: string; url: string };
   nav: readonly NavItem[];
+  /** Texto corto de la barra superior del header (datos reales); `null` = sin barra. */
+  announcement: string | null;
+  orderTracking: {
+    /**
+     * URL del Apps Script (`apps-script/pedidos.gs`) que guarda en la pestaña "Pedidos" una
+     * consulta por cada clic en "Pedir por WhatsApp". `null` = no se registra nada.
+     */
+    endpoint: string | null;
+  };
 }
 
 export const siteConfig: SiteConfig = {
@@ -46,6 +55,11 @@ export const siteConfig: SiteConfig = {
     { label: 'Nosotros', path: 'nosotros/' },
     { label: 'Preguntas', path: 'preguntas/' },
   ],
+  announcement: 'Entregas en Bogotá (Sabana norte) · Pedidos por WhatsApp',
+  orderTracking: {
+    endpoint:
+      'https://script.google.com/macros/s/AKfycbxE12EvGT3-T6-FaXc0WKbFpr2NikFx5J1sRynOcFwyhuaFcf6lUk7D6utk5QvOxBIt/exec',
+  },
 };
 
 /** Nombre a mostrar mientras el negocio no esté configurado. */

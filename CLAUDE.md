@@ -30,6 +30,9 @@ El negocio edita su hoja; `pnpm sync:content` (workflow `sync-content.yml`, diar
 | `Zonas` | `zonas` | `/entregas/` | No (aviso si falta) |
 | `Preguntas` | `preguntas` | `/preguntas/` (JSON-LD FAQPage) | No |
 | `Nosotros` | `nosotros` (imagen opcional) | `/nosotros/` | No |
+| `Pedidos` | `pedidos` | Aviso de pedidos (abajo a la izquierda, todas las páginas) | No (sin aviso si falta) |
+
+- `Pedidos`: el negocio anota **pedidos reales** (columnas `Fecha`, `Producto`, `Ciudad` opcional, `Estado`; puede tener más columnas, p. ej. el cliente, que nunca se leen). Se publican solo fecha, producto y ciudad de las filas "Publicado" de los últimos 14 días (máx. 20). Sus problemas son **avisos** (se omite la fila) y nunca bloquean el catálogo. El aviso es anónimo ("Alguien de Chía pidió «…» · Hoy"), calcula hoy/ayer en el navegador con la hora de Colombia, sale una vez por visita, se pausa con puntero/foco y se cierra para la sesión. Columna opcional `Tipo` (`Pedido` por defecto, o `Consulta`). **Consultas automáticas** (opcional): si `siteConfig.orderTracking.endpoint` tiene la URL del Apps Script (`apps-script/pedidos.gs`, desplegado por el dueño como aplicación web), cada clic en "Pedir por WhatsApp" guarda una fila `Consulta` con solo el producto (`fetch` `no-cors` + `keepalive`, una vez por producto y visita; la CSP abre `script.google.com`/`script.googleusercontent.com` solo en ese caso). Como el endpoint es público, el sync solo publica una consulta si su producto coincide con uno del catálogo (sin tildes ni mayúsculas) y como mucho una por producto y día; el aviso dice "Alguien consultó por «…»", **nunca "pidió"**: un clic no prueba una venta. El dueño retira una poniendo `Estado` = Borrador.
 
 - Cada pestaña lleva además las columnas **"Errores a corregir"** y **"Detalle error"**, que el sync rellena (✅ / ⚠️ errores que bloquean / 🟡 avisos que no bloquean / notas de borrador). Nunca se leen como datos.
 - Solo se publican filas en estado "Publicado" (los repos son públicos).
@@ -57,7 +60,10 @@ Stack: Astro 7 (estático), TypeScript 6, pnpm 12.7.0 (`packageManager`), Node 2
 - **Sin React**: los componentes son `.astro`; interacción mínima con `<script>` o elementos nativos (`<details>` en preguntas, carrusel con scroll-snap). Cualquier isla futura debe justificarse.
 - **Capas**: `src/pages`/`src/layouts` componen; `src/components` UI; `src/lib` lógica pura sin Astro/React (probada con Vitest); `src/config` datos del negocio. `scripts/` hace red y disco del sync.
 - **Rutas**: `site` y `base` llegan por entorno (`SITE_URL`, `BASE_PATH`) y en CI los rellena `actions/configure-pages` (dominio propio → base `/`). Todo enlace interno pasa por `withBase` de `src/lib/url.ts`; nada de rutas absolutas escritas a mano. `trailingSlash: 'always'`.
-- **Tema**: colores del negocio solo en `src/styles/theme.css` (tokens CSS); verificar contraste AA al cambiarlos.
+- **Tema**: colores y fuentes del negocio solo en `src/styles/theme.css` (tokens CSS; fuentes autoalojadas en `src/assets/fonts/` con `@font-face` y `--font-sans` / `--font-serif`, subconjunto latino, `font-display: swap`); verificar contraste AA al cambiarlos.
+- **Acento**: además del primario, `theme.css` puede redefinir `--color-accent` (decorativo: borde del header, borde del aviso; contraste ≥ 3:1), `--color-accent-text` (texto pequeño: énfasis de títulos, etiqueta del hero; ≥ 4.5:1), `--color-accent-on-primary` (cifras grandes sobre el primario; ≥ 3:1) y `--color-tint` (fondo suave del hero). Sin redefinirlos siguen al primario. Un oro rosa claro (`#B76E79`) no sirve para texto pequeño: usar su versión oscura en `--color-accent-text`.
+- **Header**: barra superior opcional (`siteConfig.announcement`, solo datos reales), enlaces a la izquierda, marca centrada, botón "Pedir por WhatsApp" y menú desplegable en móvil (sin JS queda visible).
+- **Inicio**: hero con la imagen del primer destacado (o del primer producto) y franja de confianza calculada del catálogo y la configuración (número de desayunos, zona, pedidos por WhatsApp); nunca cifras inventadas.
 - **Pedidos**: botón por producto que abre `wa.me` con el mensaje armado (`src/lib/order.ts`). El sitio no guarda datos personales.
 
 ## Reglas heredadas (mismo estándar que desayunosorpresas.com)

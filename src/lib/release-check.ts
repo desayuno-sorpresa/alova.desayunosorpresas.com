@@ -8,9 +8,19 @@ export interface ReleaseInput {
   city: string | null;
   whatsApp: string | null;
   instagramUrl: string | null;
+  orderTracking: { endpoint: string | null };
 }
 
-const REQUIRED: readonly [keyof ReleaseInput, string][] = [
+function isAppsScriptUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' && url.hostname === 'script.google.com';
+  } catch {
+    return false;
+  }
+}
+
+const REQUIRED: readonly [Exclude<keyof ReleaseInput, 'orderTracking'>, string][] = [
   ['businessName', 'el nombre del negocio'],
   ['tagline', 'la frase corta del inicio'],
   ['description', 'la descripción para buscadores'],
@@ -33,6 +43,11 @@ export function findReleaseBlockers(config: ReleaseInput): string[] {
   }
   if (config.instagramUrl !== null && !parseHttpsUrl(config.instagramUrl).ok) {
     blockers.push('El enlace de Instagram debe empezar por "https://".');
+  }
+  if (config.orderTracking.endpoint !== null && !isAppsScriptUrl(config.orderTracking.endpoint)) {
+    blockers.push(
+      'siteConfig.orderTracking.endpoint debe ser una URL https://script.google.com/….',
+    );
   }
   return blockers;
 }

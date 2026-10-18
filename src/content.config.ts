@@ -2,6 +2,7 @@ import { defineCollection } from 'astro:content';
 import { file } from 'astro/loaders';
 import { z } from 'astro/zod';
 import { LIMITS as L, SLUG_PATTERN } from '@/lib/content-sync/limits';
+import { parseIsoDate } from '@/lib/recent-orders';
 
 /*
  * El JSON y las imágenes de cada colección los genera `pnpm sync:content`
@@ -83,4 +84,16 @@ const nosotros = defineCollection({
     }),
 });
 
-export const collections = { productos, zonas, preguntas, nosotros };
+// Pedidos reales anónimos (fecha, producto y ciudad) para el aviso de actividad.
+const pedidos = defineCollection({
+  loader: jsonList('pedidos'),
+  schema: z.object({
+    date: z.string().refine((value) => parseIsoDate(value) !== null, 'Fecha YYYY-MM-DD.'),
+    product: z.string().min(L.order.product.min).max(L.order.product.max),
+    city: z.string().min(L.order.city.min).max(L.order.city.max).optional(),
+    kind: z.enum(['pedido', 'consulta']).default('pedido'),
+    updatedAt: z.coerce.date(),
+  }),
+});
+
+export const collections = { productos, zonas, preguntas, nosotros, pedidos };

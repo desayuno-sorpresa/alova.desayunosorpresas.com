@@ -2,13 +2,19 @@ export const PRODUCTS_SHEET = 'Productos';
 export const ZONES_SHEET = 'Zonas';
 export const FAQ_SHEET = 'Preguntas';
 export const ABOUT_SHEET = 'Nosotros';
+export const ORDERS_SHEET = 'Pedidos';
 export type SheetName =
-  typeof PRODUCTS_SHEET | typeof ZONES_SHEET | typeof FAQ_SHEET | typeof ABOUT_SHEET;
+  | typeof PRODUCTS_SHEET
+  | typeof ZONES_SHEET
+  | typeof FAQ_SHEET
+  | typeof ABOUT_SHEET
+  | typeof ORDERS_SHEET;
 export const ALL_SHEETS: readonly SheetName[] = [
   PRODUCTS_SHEET,
   ZONES_SHEET,
   FAQ_SHEET,
   ABOUT_SHEET,
+  ORDERS_SHEET,
 ];
 
 /**

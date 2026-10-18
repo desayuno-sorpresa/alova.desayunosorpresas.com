@@ -143,6 +143,7 @@ describe('runSync', () => {
         { name: 'zonas', rows: 1, drafts: 0, published: 1, images: 0 },
         { name: 'preguntas', rows: 1, drafts: 0, published: 1, images: 0 },
         { name: 'nosotros', rows: 1, drafts: 0, published: 1, images: 1 },
+        { name: 'pedidos', rows: 0, drafts: 0, published: 0, images: 0 },
       ],
       changed: true,
     });
@@ -176,13 +177,49 @@ describe('runSync', () => {
   it('sin las pestañas opcionales publica el catálogo y deja avisos', async () => {
     const sheets = new Map([['Productos', productsGrid()]]);
     const report = await runSync(fakeSource(sheets, await validFiles()), options);
-    expect(report.collections.map((c) => c.published)).toEqual([1, 0, 0, 0]);
+    expect(report.collections.map((c) => c.published)).toEqual([1, 0, 0, 0, 0]);
     expect(report.warnings).toEqual([
       'Crea la pestaña "Zonas" para mostrar esa sección.',
       'Crea la pestaña "Preguntas" para mostrar esa sección.',
       'Crea la pestaña "Nosotros" para mostrar esa sección.',
     ]);
     expect(await readJson(contentDir, 'zonas')).toEqual([]);
+  });
+
+  it('publica pedidos anónimos y un pedido inválido no bloquea el catálogo', async () => {
+    const sheets = allSheets();
+    const cells = (values: string[]) => values.map((text) => ({ text }));
+    sheets.set('Pedidos', [
+      cells([
+        'Fecha',
+        'Producto',
+        'Ciudad',
+        'Cliente',
+        'Estado',
+        'Errores a corregir',
+        'Detalle error',
+      ]),
+      cells(['2026-10-11', 'Desayuno para mujer', 'Chía', 'Ana Pérez', 'Publicado']),
+      cells(['ayer', 'Desayuno para niño', '', 'Luis', 'Publicado']),
+    ]);
+    const source = fakeSource(sheets, await validFiles());
+    const report = await runSync(source, options);
+    expect(report.collections[0]?.published).toBe(1);
+    expect(report.collections[4]).toMatchObject({ name: 'pedidos', rows: 2, published: 1 });
+    expect(report.warnings).toContain(
+      'Pedidos, fila 3: Aviso: "Fecha" debe tener el formato 2026-10-17 o 17/10/2026.',
+    );
+    expect(await readJson(contentDir, 'pedidos')).toEqual([
+      {
+        id: '2026-10-11-fila-2',
+        date: '2026-10-11',
+        product: 'Desayuno para mujer',
+        city: 'Chía',
+        kind: 'pedido',
+        updatedAt: options.today,
+      },
+    ]);
+    expect(JSON.stringify(await readJson(contentDir, 'pedidos'))).not.toMatch(/Ana|Luis/);
   });
 
   it('sin la pestaña Productos no publica nada', async () => {

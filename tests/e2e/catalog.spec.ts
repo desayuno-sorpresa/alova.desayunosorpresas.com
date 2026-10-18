@@ -24,7 +24,8 @@ test.describe('catálogo', () => {
     page,
   }) => {
     await page.goto('catalogo/');
-    const orders = page.getByRole('link', { name: /^Pedir por WhatsApp/ });
+    // Solo los productos: el header tiene además su propio "Pedir por WhatsApp".
+    const orders = page.getByRole('main').getByRole('link', { name: /^Pedir por WhatsApp/ });
     if ((await orders.count()) === 0) {
       // Plantilla sin número configurado.
       await expect(page.getByText('Pedidos por WhatsApp disponibles muy pronto.')).toHaveCount(5);

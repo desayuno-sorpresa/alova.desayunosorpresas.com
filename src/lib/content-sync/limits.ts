@@ -18,6 +18,14 @@ export const LIMITS = {
     title: { min: 3, max: 80 },
     text: { min: 10, max: 1500 },
   },
+  order: {
+    product: { min: 2, max: 80 },
+    city: { min: 2, max: 60 },
+    /** Días que un pedido sigue visible en el aviso. */
+    days: 14,
+    /** Máximo de pedidos publicados. */
+    max: 20,
+  },
   altMin: 5,
 } as const;
 

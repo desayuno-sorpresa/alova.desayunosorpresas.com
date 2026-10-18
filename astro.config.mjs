@@ -1,6 +1,12 @@
 // @ts-check
 import sitemap from '@astrojs/sitemap';
 import { defineConfig } from 'astro/config';
+import { siteConfig } from './src/config/site.ts';
+
+// Orígenes del Apps Script que registra consultas (responde con una redirección a googleusercontent).
+const trackingOrigins = siteConfig.orderTracking.endpoint
+  ? ['https://script.google.com', 'https://script.googleusercontent.com']
+  : [];
 
 /*
  * Cada negocio publica en su propio dominio o subdominio. `site` y `base` llegan por entorno;
@@ -26,7 +32,7 @@ export default defineConfig({
         "default-src 'self'",
         "img-src 'self' data:",
         "font-src 'self'",
-        "connect-src 'self'",
+        `connect-src ${["'self'", ...trackingOrigins].join(' ')}`,
         "base-uri 'self'",
         "form-action 'self'",
         "object-src 'none'",

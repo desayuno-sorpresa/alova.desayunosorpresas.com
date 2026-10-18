@@ -1,0 +1,54 @@
+---
+interface Props {
+  /** URL del Apps Script que guarda la consulta en la pestaña "Pedidos". */
+  endpoint: string;
+}
+
+const { endpoint } = Astro.props;
+---
+
+<div hidden data-order-tracker data-endpoint={endpoint}></div>
+
+<script>
+  const STORAGE_KEY = 'consultas-registradas';
+
+  function alreadySent(product: string): boolean {
+    try {
+      const sent: unknown = JSON.parse(sessionStorage.getItem(STORAGE_KEY) ?? '[]');
+      return Array.isArray(sent) && sent.includes(product);
+    } catch {
+      return false;
+    }
+  }
+
+  function markSent(product: string): void {
+    try {
+      const sent: unknown = JSON.parse(sessionStorage.getItem(STORAGE_KEY) ?? '[]');
+      const list = Array.isArray(sent) ? sent : [];
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify([...list, product]));
+    } catch {
+      // Sin almacenamiento: puede repetirse, y el sync deduplica por producto y día.
+    }
+  }
+
+  const tracker = document.querySelector<HTMLElement>('[data-order-tracker]');
+  const endpoint = tracker?.dataset['endpoint'] ?? '';
+
+  if (endpoint !== '') {
+    document.addEventListener('click', (event) => {
+      if (!(event.target instanceof Element)) return;
+      const link = event.target.closest<HTMLElement>('[data-order-product]');
+      const product = link?.dataset['orderProduct'];
+      if (!product || alreadySent(product)) return;
+      markSent(product);
+      // Sin esperar respuesta: `keepalive` termina el envío aunque se abra WhatsApp.
+      // Solo viaja el nombre del producto: nada de datos personales.
+      fetch(endpoint, {
+        method: 'POST',
+        mode: 'no-cors',
+        keepalive: true,
+        body: new URLSearchParams({ product }),
+      }).catch(() => {});
+    });
+  }
+</script>

@@ -7,6 +7,15 @@
   --color-border: #e6d6c3;
   --color-primary: #8a3b12;
   --color-primary-text: #ffffff;
+  /* Acento (p. ej. oro rosa): por defecto sigue al primario; cada negocio lo redefine en theme.css.
+     --color-accent: solo detalles decorativos y cifras grandes (contraste ≥ 3:1).
+     --color-accent-text: texto pequeño sobre el fondo (contraste ≥ 4.5:1).
+     --color-accent-on-primary: sobre fondos del color primario (cifras grandes ≥ 3:1).
+     --color-tint: fondo suave de apoyo (degradado del hero). */
+  --color-accent: var(--color-primary);
+  --color-accent-text: var(--color-primary);
+  --color-accent-on-primary: var(--color-primary-text);
+  --color-tint: var(--color-bg);
   --color-whatsapp: #075e54;
   --color-whatsapp-text: #ffffff;
   --color-focus: #1d4ed8;
@@ -18,7 +27,9 @@
   --space-3: 1.5rem;
   --space-4: 2.5rem;
   --max-width: 68rem;
+  /* Fuentes: cada negocio puede autoalojar las suyas en theme.css (@font-face + estas variables). */
   --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-serif: Georgia, 'Times New Roman', serif;
 
   color-scheme: light;
 }
@@ -63,6 +74,19 @@ h2,
 h3 {
   line-height: 1.25;
   text-wrap: balance;
+}
+
+h1,
+h2 {
+  font-family: var(--font-serif);
+  font-weight: 700;
+}
+
+/* Énfasis en cursiva dentro de un título. */
+h1 em,
+h2 em {
+  font-weight: 500;
+  color: var(--color-accent-text);
 }
 
 h1 {
