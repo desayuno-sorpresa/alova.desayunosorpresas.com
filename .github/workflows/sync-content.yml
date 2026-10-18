@@ -9,7 +9,9 @@ name: Sincronizar contenido desde Google Sheets
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 11 * * *' # 6:00 a. m. hora de Colombia
+    # Cada hora: las consultas y pedidos nuevos salen en el aviso sin lanzar nada a mano.
+    # Sin cambios en la hoja no se abre PR ni se despliega.
+    - cron: '0 * * * *'
 
 permissions:
   contents: read
@@ -65,14 +67,17 @@ jobs:
             echo
             if [ -s "$PROBLEMS_FILE" ]; then cat "$PROBLEMS_FILE"; else echo "Revisa el detalle en la ejecución."; fi
             echo
-            echo "Cuando corrijas la hoja, lanza el sync de nuevo (o espera al de mañana): si ya no hay errores, se publicará y este issue se cerrará solo."
+            echo "Cuando corrijas la hoja, lanza el sync de nuevo (o espera al siguiente, que corre cada hora): si ya no hay errores, se publicará y este issue se cerrará solo."
             echo
             echo "Ejecución: $RUN_URL"
           } > issue-body.md
           number=$(gh issue list --label "$ISSUE_LABEL" --state open --json number --jq '.[0].number')
           if [ -n "$number" ]; then
             gh issue edit "$number" --body-file issue-body.md
-            gh issue comment "$number" --body "Nueva ejecución con errores: $RUN_URL"
+            # Solo en ejecuciones manuales: cada hora, un error persistente llenaría el issue.
+            if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+              gh issue comment "$number" --body "Nueva ejecución con errores: $RUN_URL"
+            fi
           else
             gh issue create --title "$ISSUE_TITLE" --label "$ISSUE_LABEL" \
               --assignee "${{ github.repository_owner }}" --body-file issue-body.md

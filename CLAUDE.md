@@ -22,7 +22,7 @@ Todo lo propio de un negocio está en `src/config/site.ts` (`siteConfig`). Valor
 
 ## Contenido desde Google Sheets
 
-El negocio edita su hoja; `pnpm sync:content` (workflow `sync-content.yml`, diario 6:00 Colombia y manual) la convierte en colecciones de `src/content/` y escribe la revisión en la propia hoja. **No editar `src/content/` a mano.**
+El negocio edita su hoja; `pnpm sync:content` (workflow `sync-content.yml`, cada hora y manual; sin cambios en la hoja no abre PR ni despliega) la convierte en colecciones de `src/content/` y escribe la revisión en la propia hoja. **No editar `src/content/` a mano.**
 
 | Pestaña | Colección | Página | Obligatoria |
 |---|---|---|---|
