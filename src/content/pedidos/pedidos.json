@@ -1,17 +1,16 @@
 [
   {
+    "id": "2026-10-18-fila-5",
+    "date": "2026-10-18",
+    "product": "Caja dulce",
+    "kind": "pedido",
+    "updatedAt": "2026-10-19"
+  },
+  {
     "id": "2026-10-18-fila-3",
     "date": "2026-10-18",
     "product": "Caja dulce",
     "kind": "consulta",
-    "updatedAt": "2026-10-18"
-  },
-  {
-    "id": "2026-10-17-fila-2",
-    "date": "2026-10-17",
-    "product": "Desayuno apagamelavelamaria",
-    "city": "Cajicity",
-    "kind": "pedido",
     "updatedAt": "2026-10-18"
   }
 ]
